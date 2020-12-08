@@ -5,6 +5,7 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -95,6 +96,21 @@ public abstract class VelocityEval<R extends ConnectRecord<R>> implements Transf
 
   protected abstract R newRecord(R record, Schema updatedSchema, Object updatedValue);
 
+  public static class OperatingValue {
+    final Struct inner;
+    public OperatingValue(Struct inner) {
+      this.inner = inner;
+    }
+    public Object get(String field) {
+      try {
+        return inner.get(field);
+      } catch (org.apache.kafka.connect.errors.DataException e) {
+        log.debug("failed to get value for " + field, e);
+        return null;
+      }
+    }
+
+  }
   public static class Key<R extends ConnectRecord<R>> extends VelocityEval<R> {
     @Override
     protected Schema operatingSchema(R record) {
@@ -103,6 +119,9 @@ public abstract class VelocityEval<R extends ConnectRecord<R>> implements Transf
 
     @Override
     protected Object operatingValue(R record) {
+      if (record.key() instanceof Struct) {
+        return new OperatingValue((Struct) record.key());
+      }
       return record.key();
     }
 
@@ -121,6 +140,9 @@ public abstract class VelocityEval<R extends ConnectRecord<R>> implements Transf
 
     @Override
     protected Object operatingValue(R record) {
+      if (record.value() instanceof Struct) {
+        return new OperatingValue((Struct) record.value());
+      }
       return record.value();
     }
 

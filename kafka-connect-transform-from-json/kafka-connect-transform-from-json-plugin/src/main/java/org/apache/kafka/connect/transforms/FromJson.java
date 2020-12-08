@@ -86,7 +86,7 @@ public abstract class FromJson<R extends ConnectRecord<R>> implements Transforma
         updatedSchema, updatedValue, record.valueSchema(), record.value(), record.timestamp());
     }
   }
-
+  
   public static class Value<R extends ConnectRecord<R>> extends FromJson<R> {
     @Override
     protected Schema operatingSchema(R record) {
